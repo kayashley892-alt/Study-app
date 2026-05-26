@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StudyOS – Multi-Course Academic App</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0f14;
+  --surface: #161820;
+  --surface2: #1e2030;
+  --border: #2a2d3e;
+  --text: #e8eaf0;
+  --muted: #6b7090;
+  --accent: #7c6bff;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Sora',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+.app { display:flex; height:100vh; overflow:hidden; }
+
+/* SIDEBAR */
+.sidebar { width:220px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:20px 0; flex-shrink:0; }
+.sidebar-logo { padding:0 20px 20px; border-bottom:1px solid var(--border); }
+.sidebar-logo h1 { font-family:'Playfair Display',serif; font-size:22px; background:linear-gradient(135deg,#7c6bff,#ff6b9d); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.sidebar-logo p { font-size:10px; color:var(--muted); margin-top:2px; letter-spacing:1px; text-transform:uppercase; }
+.nav-section { padding:16px 12px 8px; }
+.nav-label { font-size:9px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; padding:0 8px; margin-bottom:6px; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; cursor:pointer; font-size:13px; color:var(--muted); transition:all 0.2s; margin-bottom:2px; }
+.nav-item:hover { background:var(--surface2); color:var(--text); }
+.nav-item.active { background:rgba(124,107,255,0.15); color:#7c6bff; }
+.nav-icon { font-size:15px; width:20px; text-align:center; }
+.course-switcher { padding:16px 12px; border-top:1px solid var(--border); margin-top:auto; }
+.course-switcher-label { font-size:9px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; padding:0 8px; margin-bottom:8px; }
+.course-pill { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:12px; transition:all 0.2s; margin-bottom:3px; color:var(--muted); }
+.course-pill:hover { background:var(--surface2); }
+.course-pill.active { background:rgba(124,107,255,0.12); color:var(--text); }
+.course-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.add-course-btn { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; cursor:pointer; font-size:12px; color:#7c6bff; margin-top:4px; transition:all 0.2s; border:1px dashed rgba(124,107,255,0.3); }
+.add-course-btn:hover { background:rgba(124,107,255,0.08); }
+
+/* MAIN */
+.main { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
+.topbar { padding:16px 28px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:var(--surface); position:sticky; top:0; z-index:10; flex-shrink:0; }
+.topbar-left { display:flex; align-items:center; gap:14px; }
+.current-course-badge { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:13px; font-weight:500; cursor:pointer; }
+.topbar-greeting { font-size:13px; color:var(--muted); }
+.topbar-right { display:flex; gap:8px; }
+.icon-btn { width:36px; height:36px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:15px; transition:all 0.2s; }
+.icon-btn:hover { border-color:#7c6bff; }
+.content { padding:28px; flex:1; }
+.page { display:none; }
+.page.active { display:block; }
+
+/* HOME */
+.home-header { margin-bottom:28px; }
+.home-header h2 { font-family:'Playfair Display',serif; font-size:28px; font-weight:700; }
+.home-header p { color:var(--muted); font-size:13px; margin-top:4px; }
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; }
+.stat-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.stat-value { font-size:26px; font-weight:700; }
+.stat-sub { font-size:11px; color:var(--muted); margin-top:4px; }
+.section-title { font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:14px; }
+.courses-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:28px; }
+.course-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px; cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden; }
+.course-card:hover { transform:translateY(-2px); }
+.course-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+.course-card-name { font-size:15px; font-weight:600; }
+.course-card-type { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+.progress-bar-wrap { background:var(--surface2); border-radius:4px; height:4px; margin-bottom:8px; }
+.progress-bar { height:4px; border-radius:4px; }
+.course-card-meta { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+
+/* NOTES */
+.notes-layout { display:grid; grid-template-columns:260px 1fr; gap:20px; height:calc(100vh - 180px); }
+.notes-list { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+.notes-list-header { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.btn-sm { padding:5px 12px; border-radius:6px; border:none; background:#7c6bff; color:#fff; font-family:'Sora',sans-serif; font-size:11px; font-weight:600; cursor:pointer; }
+.note-item { padding:12px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.15s; }
+.note-item:hover { background:var(--surface2); }
+.note-item.active { background:rgba(124,107,255,0.1); }
+.note-item-title { font-size:13px; font-weight:500; margin-bottom:3px; }
+.note-item-meta { font-size:11px; color:var(--muted); }
+.note-editor { background:var(--surface); border:1px solid var(--border); border-radius:12px; display:flex; flex-direction:column; overflow:hidden; }
+.note-editor-top { padding:14px 20px; border-bottom:1px solid var(--border); }
+.note-editor-top input { background:none; border:none; outline:none; font-family:'Sora',sans-serif; font-size:18px; font-weight:600; color:var(--text); width:100%; }
+.note-editor-body { flex:1; padding:20px; }
+.note-editor-body textarea { width:100%; height:100%; background:none; border:none; outline:none; font-family:'Sora',sans-serif; font-size:14px; color:var(--text); resize:none; line-height:1.7; min-height:300px; }
+
+/* FLASHCARDS */
+.flashcard-wrap { max-width:600px; margin:0 auto; text-align:center; }
+.flashcard { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:60px 40px; min-height:240px; display:flex; flex-direction:column; justify-content:center; align-items:center; cursor:pointer; transition:all 0.3s; margin-bottom:20px; }
+.flashcard:hover { border-color:#7c6bff; }
+.flashcard-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:16px; }
+.flashcard-text { font-size:20px; font-weight:600; line-height:1.5; }
+.flashcard-hint { font-size:11px; color:var(--muted); margin-top:12px; }
+.flashcard-nav { display:flex; gap:12px; justify-content:center; }
+.fc-btn { padding:10px 24px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-family:'Sora',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+.fc-btn:hover { border-color:#7c6bff; }
+.fc-btn.correct { border-color:#4ade80; color:#4ade80; }
+.fc-btn.wrong { border-color:#f87171; color:#f87171; }
+.fc-counter { font-size:12px; color:var(--muted); margin-bottom:20px; }
+.fc-add { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px; margin-top:28px; text-align:left; }
+.form-group { margin-bottom:14px; }
+.form-group label { display:block; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+.form-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-family:'Sora',sans-serif; font-size:13px; outline:none; }
+.form-select { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-family:'Sora',sans-serif; font-size:13px; outline:none; }
+
+/* AI */
+.ai-context-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(124,107,255,0.12); border:1px solid rgba(124,107,255,0.3); padding:6px 14px; border-radius:20px; font-size:12px; color:#7c6bff; margin-bottom:16px; }
+.ai-layout { display:flex; flex-direction:column; height:calc(100vh - 220px); }
+.ai-messages { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:14px; padding-bottom:14px; }
+.msg { max-width:80%; }
+.msg.user { align-self:flex-end; }
+.msg.ai { align-self:flex-start; }
+.msg-bubble { padding:12px 16px; border-radius:14px; font-size:13px; line-height:1.6; }
+.msg.user .msg-bubble { background:#7c6bff; color:#fff; border-bottom-right-radius:4px; }
+.msg.ai .msg-bubble { background:var(--surface); border:1px solid var(--border); border-bottom-left-radius:4px; }
+.msg-name { font-size:10px; color:var(--muted); margin-bottom:4px; }
+.ai-input-row { display:flex; gap:10px; padding-top:14px; border-top:1px solid var(--border); flex-shrink:0; }
+.ai-input { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 16px; color:var(--text); font-family:'Sora',sans-serif; font-size:13px; outline:none; }
+.ai-input:focus { border-color:#7c6bff; }
+.send-btn { padding:12px 20px; background:#7c6bff; border:none; border-radius:10px; color:#fff; font-family:'Sora',sans-serif; font-size:13px; font-weight:600; cursor:pointer; }
+.send-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* ANALYTICS */
+.analytics-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.analytics-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px; }
+.analytics-card h3 { font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px; }
+.bar-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.bar-name { font-size:12px; width:110px; flex-shrink:0; }
+.bar-track { flex:1; background:var(--surface2); border-radius:4px; height:8px; }
+.bar-fill { height:8px; border-radius:4px; }
+.bar-pct { font-size:11px; color:var(--muted); width:32px; text-align:right; }
+
+/* PLAN */
+.plan-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:20px; }
+.day-col { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 8px; }
+.day-label { font-size:10px; color:var(--muted); text-align:center; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.day-task { background:var(--surface2); border-radius:6px; padding:6px 8px; font-size:10px; margin-bottom:4px; text-align:center; border-left:2px solid; }
+
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); display:none; align-items:center; justify-content:center; z-index:100; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px; width:440px; max-width:90vw; }
+.modal h3 { font-size:18px; font-weight:700; margin-bottom:6px; }
+.modal p { font-size:13px; color:var(--muted); margin-bottom:20px; }
+.color-row { display:flex; gap:8px; flex-wrap:wrap; }
+.color-swatch { width:28px; height:28px; border-radius:50%; cursor:pointer; border:3px solid transparent; transition:border-color 0.2s; }
+.color-swatch.selected { border-color:#fff; }
+.modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+.btn-ghost { padding:9px 18px; border-radius:8px; border:1px solid var(--border); background:none; color:var(--muted); font-family:'Sora',sans-serif; font-size:13px; cursor:pointer; }
+.btn-primary { padding:9px 18px; border-radius:8px; border:none; background:#7c6bff; color:#fff; font-family:'Sora',sans-serif; font-size:13px; font-weight:600; cursor:pointer; }
+.empty-state { text-align:center; padding:60px 20px; color:var(--muted); font-size:13px; }
+.emoji-big { font-size:40px; margin-bottom:12px; }
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+.typing-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--muted); animation:blink 1.2s infinite; margin:0 2px; }
+.typing-dot:nth-child(2){ animation-delay:0.2s; }
+.typing-dot:nth-child(3){ animation-delay:0.4s; }
+@keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>StudyOS</h1>
+      <p>Academic Hub</p>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Menu</div>
+      <div class="nav-item active" onclick="showPage('home')"><span class="nav-icon">🏠</span> Dashboard</div>
+      <div class="nav-item" onclick="showPage('notes')"><span class="nav-icon">📝</span> Notes</div>
+      <div class="nav-item" onclick="showPage('flashcards')"><span class="nav-icon">🧠</span> Flashcards</div>
+      <div class="nav-item" onclick="showPage('plan')"><span class="nav-icon">📅</span> Study Plan</div>
+      <div class="nav-item" onclick="showPage('analytics')"><span class="nav-icon">📊</span> Analytics</div>
+      <div class="nav-item" onclick="showPage('ai')"><span class="nav-icon">🤖</span> AI Tutor</div>
+    </div>
+    <div class="course-switcher">
+      <div class="course-switcher-label">My Courses</div>
+      <div id="course-pills"></div>
+      <div class="add-course-btn" onclick="openModal()"><span>＋</span> Add Course</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="current-course-badge">
+          <span class="course-dot" id="badge-dot"></span>
+          <span id="badge-name">–</span> ▼
+        </div>
+        <div class="topbar-greeting" id="topbar-greet"></div>
+      </div>
+      <div class="topbar-right">
+        <div class="icon-btn">🔔</div>
+        <div class="icon-btn">⚙️</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- HOME -->
+      <div class="page active" id="page-home">
+        <div class="home-header">
+          <h2 id="home-title">Welcome back, Mumu 👋</h2>
+          <p id="home-sub"></p>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-label">Total Courses</div><div class="stat-value" id="s-courses">0</div><div class="stat-sub">Active</div></div>
+          <div class="stat-card"><div class="stat-label">Avg Progress</div><div class="stat-value" id="s-progress">0%</div><div class="stat-sub">All courses</div></div>
+          <div class="stat-card"><div class="stat-label">Notes</div><div class="stat-value" id="s-notes">0</div><div class="stat-sub">Current course</div></div>
+          <div class="stat-card"><div class="stat-label">Flashcards</div><div class="stat-value" id="s-cards">0</div><div class="stat-sub">Current course</div></div>
+        </div>
+        <div class="section-title">All Courses</div>
+        <div class="courses-grid" id="courses-grid"></div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="page" id="page-notes">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <div><h2 style="font-family:'Playfair Display',serif;font-size:24px;">Notes</h2><p id="notes-label" style="font-size:12px;color:var(--muted);margin-top:4px;"></p></div>
+          <button class="btn-sm" onclick="addNote()">+ New Note</button>
+        </div>
+        <div class="notes-layout">
+          <div class="notes-list">
+            <div class="notes-list-header"><span id="notes-count">0 notes</span></div>
+            <div id="notes-items" style="overflow-y:auto;flex:1;"></div>
+          </div>
+          <div class="note-editor" id="note-editor"><div class="empty-state"><div class="emoji-big">📝</div>Select or create a note</div></div>
+        </div>
+      </div>
+
+      <!-- FLASHCARDS -->
+      <div class="page" id="page-flashcards">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+          <div><h2 style="font-family:'Playfair Display',serif;font-size:24px;">Flashcards</h2><p id="fc-label" style="font-size:12px;color:var(--muted);margin-top:4px;"></p></div>
+        </div>
+        <div class="flashcard-wrap">
+          <div class="fc-counter" id="fc-counter"></div>
+          <div class="flashcard" id="flashcard" onclick="flipCard()">
+            <div class="empty-state"><div class="emoji-big">🧠</div>No cards yet — add some below!</div>
+          </div>
+          <div class="flashcard-nav" id="fc-nav" style="display:none;">
+            <button class="fc-btn wrong" onclick="nextCard('wrong')">✗ Still learning</button>
+            <button class="fc-btn" onclick="flipCard()">↩ Flip</button>
+            <button class="fc-btn correct" onclick="nextCard('correct')">✓ Got it</button>
+          </div>
+          <div class="fc-add">
+            <div class="section-title" style="margin-bottom:12px;">Add Flashcard</div>
+            <div class="form-group"><label>Question / Term</label><input class="form-input" id="fc-q" placeholder="e.g. What is consideration?"></div>
+            <div class="form-group"><label>Answer / Definition</label><input class="form-input" id="fc-a" placeholder="e.g. Something of value exchanged..."></div>
+            <button class="btn-primary" style="width:100%;" onclick="addFlashcard()">Add Card</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STUDY PLAN -->
+      <div class="page" id="page-plan">
+        <div style="margin-bottom:24px;"><h2 style="font-family:'Playfair Display',serif;font-size:24px;">Study Plan</h2><p id="plan-label" style="font-size:12px;color:var(--muted);margin-top:4px;"></p></div>
+        <div class="section-title">This Week</div>
+        <div class="plan-grid" id="plan-grid"></div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;max-width:480px;">
+          <div class="section-title" style="margin-bottom:12px;">Add Task</div>
+          <div class="form-group"><label>Day</label>
+            <select class="form-select" id="task-day">
+              <option>Mon</option><option>Tue</option><option>Wed</option><option>Thu</option><option>Fri</option><option>Sat</option><option>Sun</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Task</label><input class="form-input" id="task-text" placeholder="e.g. Revise Contract Law Ch.3"></div>
+          <button class="btn-primary" style="width:100%;" onclick="addTask()">Add to Plan</button>
+        </div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="page" id="page-analytics">
+        <div style="margin-bottom:24px;"><h2 style="font-family:'Playfair Display',serif;font-size:24px;">Analytics</h2><p style="font-size:12px;color:var(--muted);margin-top:4px;">Progress across all courses</p></div>
+        <div class="analytics-grid">
+          <div class="analytics-card"><h3>Course Progress</h3><div id="a-bars"></div></div>
+          <div class="analytics-card"><h3>Course Insights</h3><div id="a-insights"></div></div>
+          <div class="analytics-card" style="grid-column:1/-1;"><h3>Flashcard Performance</h3><div id="a-fc"></div></div>
+        </div>
+      </div>
+
+      <!-- AI TUTOR -->
+      <div class="page" id="page-ai">
+        <div style="margin-bottom:12px;"><h2 style="font-family:'Playfair Display',serif;font-size:24px;">AI Tutor</h2></div>
+        <div class="ai-context-badge">🎓 Tutoring: <strong id="ai-course-name" style="margin-left:4px;">–</strong></div>
+        <div class="ai-layout">
+          <div class="ai-messages" id="ai-messages">
+            <div class="msg ai"><div class="msg-name">AI Tutor</div><div class="msg-bubble" id="ai-welcome">Hi Mumu! I'm your course-aware AI tutor. Ask me anything! 🎓</div></div>
+          </div>
+          <div class="ai-input-row">
+            <input class="ai-input" id="ai-input" placeholder="Ask anything about your course..." onkeydown="if(event.key==='Enter')sendAI()">
+            <button class="send-btn" id="send-btn" onclick="sendAI()">Send →</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>Add New Course</h3>
+    <p>Create a course to organise your study materials.</p>
+    <div class="form-group"><label>Course Name</label><input class="form-input" id="m-name" placeholder="e.g. Law, Business Studies, Economics"></div>
+    <div class="form-group"><label>Course Type</label><select class="form-select" id="m-type"><option>Degree</option><option>Module</option><option>Subject</option><option>Custom</option></select></div>
+    <div class="form-group"><label>Colour Tag</label><div class="color-row" id="color-row"></div></div>
+    <div class="form-group"><label>Progress % (0–100)</label><input class="form-input" id="m-prog" type="number" min="0" max="100" value="0"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="createCourse()">Create Course</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#7c6bff','#ff6b9d','#4ade80','#fb923c','#38bdf8','#facc15','#f472b6','#a78bfa'];
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+let state = {
+  courses: [
+    { id:'law', name:'Law (LLB)', type:'Degree', color:'#7c6bff', progress:60,
+      notes:[{id:1,title:'Introduction to Law',body:'Law is a system of rules created and enforced by society or government...',date:'May 20'}],
+      flashcards:[
+        {q:'What is consideration?',a:'Something of value exchanged between parties that makes a contract legally binding.',status:'new'},
+        {q:'Define Tort',a:'A civil wrong that causes harm or loss, giving rise to legal liability.',status:'new'},
+        {q:'What is the rule in Donoghue v Stevenson?',a:'You owe a duty of care to your neighbour — anyone closely and directly affected by your acts.',status:'new'}
+      ],
+      plan:{Mon:['Read Constitution Ch.1'],Wed:['Torts revision'],Fri:['Legal writing practice']},
+      fcStats:{correct:4,wrong:2}
+    },
+    { id:'biz', name:'Business (BBA)', type:'Degree', color:'#4ade80', progress:30,
+      notes:[{id:1,title:'Business Environment',body:'Macro and micro environmental factors affect business operations...',date:'May 22'}],
+      flashcards:[
+        {q:'What is PESTEL?',a:'Political, Economic, Social, Technological, Environmental, Legal — a strategic analysis framework.',status:'new'}
+      ],
+      plan:{Tue:['Group project draft'],Thu:['Zambeef case study']},
+      fcStats:{correct:1,wrong:1}
+    }
+  ],
+  activeCourseId:'law',
+  activeNoteId:null,
+  fcIndex:0,
+  fcFlipped:false,
+  selectedColor:'#7c6bff'
+};
+
+const $ = id => document.getElementById(id);
+const active = () => state.courses.find(c => c.id === state.activeCourseId);
+
+function init() {
+  renderColorSwatches();
+  renderAll();
+  const h = new Date().getHours();
+  const g = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  $('topbar-greet').textContent = g+', Mumu ☀️';
+  $('home-title').textContent = g+', Mumu 👋';
+}
+
+function renderAll() {
+  renderPills();
+  renderTopbar();
+  renderHome();
+  renderNotes();
+  renderFlashcards();
+  renderPlan();
+  renderAnalytics();
+  updateAICtx();
+}
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  $('page-'+p).classList.add('active');
+  const map={home:0,notes:1,flashcards:2,plan:3,analytics:4,ai:5};
+  document.querySelectorAll('.nav-item')[map[p]].classList.add('active');
+}
+
+function switchCourse(id) {
+  state.activeCourseId=id; state.fcIndex=0; state.fcFlipped=false; state.activeNoteId=null;
+  renderAll();
+}
+
+function renderPills() {
+  $('course-pills').innerHTML = state.courses.map(c=>`
+    <div class="course-pill ${c.id===state.activeCourseId?'active':''}" onclick="switchCourse('${c.id}')">
+      <div class="course-dot" style="background:${c.color}"></div>${c.name.split('(')[0].trim()}
+    </div>`).join('');
+}
+
+function renderTopbar() {
+  const c=active();
+  $('badge-dot').style.background=c.color;
+  $('badge-name').textContent=c.name;
+}
+
+function renderHome() {
+  const c=active();
+  const avg=Math.round(state.courses.reduce((a,x)=>a+x.progress,0)/state.courses.length);
+  $('s-courses').textContent=state.courses.length;
+  $('s-progress').textContent=avg+'%';
+  $('s-notes').textContent=c.notes.length;
+  $('s-cards').textContent=c.flashcards.length;
+  $('home-sub').textContent='Currently studying: '+c.name;
+  $('courses-grid').innerHTML=state.courses.map(x=>`
+    <div class="course-card" style="border-color:${x.id===state.activeCourseId?x.color:'var(--border)'}" onclick="switchCourse('${x.id}')">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${x.color};border-radius:14px 14px 0 0;"></div>
+      <div class="course-card-header">
+        <div><div class="course-card-name">${x.name}</div><div class="course-card-type">${x.type}</div></div>
+        <div style="font-size:20px;font-weight:700;">${x.progress}%</div>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar" style="width:${x.progress}%;background:${x.color};"></div></div>
+      <div class="course-card-meta"><span>📝 ${x.notes.length} notes</span><span>🧠 ${x.flashcards.length} cards</span><span>✓ ${x.fcStats.correct} correct</span></div>
+    </div>`).join('');
+}
+
+function renderNotes() {
+  const c=active();
+  $('notes-label').textContent='Course: '+c.name;
+  $('notes-count').textContent=c.notes.length+' note'+(c.notes.length!==1?'s':'');
+  const list=$('notes-items');
+  if(!c.notes.length){list.innerHTML='<div class="empty-state"><div class="emoji-big">📝</div>No notes yet.</div>';return;}
+  list.innerHTML=c.notes.map(n=>`
+    <div class="note-item ${n.id===state.activeNoteId?'active':''}" onclick="openNote(${n.id})">
+      <div class="note-item-title">${n.title}</div><div class="note-item-meta">${n.date}</div>
+    </div>`).join('');
+  if(state.activeNoteId) _renderNoteEditor(state.activeNoteId);
+}
+
+function openNote(id) {
+  state.activeNoteId=id;
+  renderNotes();
+  _renderNoteEditor(id);
+}
+
+function _renderNoteEditor(id) {
+  const n=active().notes.find(x=>x.id===id); if(!n) return;
+  $('note-editor').innerHTML=`
+    <div class="note-editor-top"><input value="${n.title.replace(/"/g,'&quot;')}" oninput="updateNote(${id},'title',this.value)"></div>
+    <div class="note-editor-body"><textarea oninput="updateNote(${id},'body',this.value)">${n.body}</textarea></div>`;
+}
+
+function addNote() {
+  const c=active(); const id=Date.now();
+  c.notes.unshift({id,title:'New Note',body:'',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});
+  state.activeNoteId=id; renderNotes();
+}
+
+function updateNote(id,f,v){const n=active().notes.find(x=>x.id===id);if(n)n[f]=v;}
+
+function renderFlashcards() {
+  const c=active(); $('fc-label').textContent='Course: '+c.name;
+  const cards=c.flashcards;
+  if(!cards.length){$('flashcard').innerHTML='<div class="empty-state"><div class="emoji-big">🧠</div>No cards yet. Add some below!</div>';$('fc-nav').style.display='none';$('fc-counter').textContent='';return;}
+  state.fcIndex=Math.min(state.fcIndex,cards.length-1);
+  const card=cards[state.fcIndex];
+  $('fc-counter').textContent='Card '+(state.fcIndex+1)+' of '+cards.length;
+  $('flashcard').innerHTML=`
+    <div class="flashcard-label">${state.fcFlipped?'Answer':'Question'}</div>
+    <div class="flashcard-text">${state.fcFlipped?card.a:card.q}</div>
+    <div class="flashcard-hint">${state.fcFlipped?'':'Tap to reveal answer'}</div>`;
+  $('fc-nav').style.display='flex';
+}
+
+function flipCard(){state.fcFlipped=!state.fcFlipped;renderFlashcards();if(active().flashcards.length)$('fc-nav').style.display='flex';}
+
+function nextCard(r){
+  const c=active(); if(r==='correct')c.fcStats.correct++;else c.fcStats.wrong++;
+  state.fcIndex=(state.fcIndex+1)%c.flashcards.length; state.fcFlipped=false; renderFlashcards();
+}
+
+function addFlashcard(){
+  const q=$('fc-q').value.trim(),a=$('fc-a').value.trim(); if(!q||!a) return;
+  active().flashcards.push({q,a,status:'new'}); $('fc-q').value=''; $('fc-a').value='';
+  renderFlashcards(); renderHome();
+}
+
+function renderPlan(){
+  const c=active(); $('plan-label').textContent='Course: '+c.name;
+  $('plan-grid').innerHTML=DAYS.map(d=>`
+    <div class="day-col">
+      <div class="day-label">${d}</div>
+      ${(c.plan[d]||[]).map(t=>`<div class="day-task" style="border-color:${c.color}">${t}</div>`).join('')}
+    </div>`).join('');
+}
+
+function addTask(){
+  const d=$('task-day').value,t=$('task-text').value.trim(); if(!t)return;
+  const c=active(); if(!c.plan[d])c.plan[d]=[];
+  c.plan[d].push(t); $('task-text').value=''; renderPlan();
+}
+
+function renderAnalytics(){
+  $('a-bars').innerHTML=state.courses.map(c=>`
+    <div class="bar-row">
+      <div class="bar-name">${c.name.split('(')[0].trim()}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${c.progress}%;background:${c.color};"></div></div>
+      <div class="bar-pct">${c.progress}%</div>
+    </div>`).join('');
+  const s=[...state.courses].sort((a,b)=>b.progress-a.progress);
+  $('a-insights').innerHTML=`
+    <div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">🏆 Strongest Course</div><div style="font-size:14px;font-weight:600;">${s[0].name}</div></div>
+    <div style="margin-bottom:14px;"><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">⚠️ Needs Attention</div><div style="font-size:14px;font-weight:600;">${s[s.length-1].name}</div></div>
+    <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px;">📊 Overall Average</div><div style="font-size:14px;font-weight:600;">${Math.round(state.courses.reduce((a,c)=>a+c.progress,0)/state.courses.length)}%</div></div>`;
+  $('a-fc').innerHTML=state.courses.map(c=>`
+    <div class="bar-row">
+      <div class="bar-name">${c.name.split('(')[0].trim()}</div>
+      <span style="font-size:12px;color:#4ade80;">✓ ${c.fcStats.correct} correct</span>
+      <span style="font-size:12px;color:#f87171;margin-left:12px;">✗ ${c.fcStats.wrong} wrong</span>
+      <span style="font-size:11px;color:var(--muted);margin-left:12px;">${c.flashcards.length} total</span>
+    </div>`).join('');
+}
+
+function updateAICtx(){
+  const c=active();
+  $('ai-course-name').textContent=c.name;
+  $('ai-welcome').textContent=`Hi Mumu! I'm your course-aware AI tutor. I'm set to help you with ${c.name}. Ask me anything! 🎓`;
+}
+
+async function sendAI(){
+  const input=$('ai-input'), msg=input.value.trim(); if(!msg)return;
+  input.value='';
+  const c=active(), msgs=$('ai-messages');
+  msgs.innerHTML+=`<div class="msg user"><div class="msg-name" style="text-align:right">You</div><div class="msg-bubble">${msg}</div></div>`;
+  const tid='t'+Date.now();
+  msgs.innerHTML+=`<div class="msg ai" id="${tid}"><div class="msg-name">AI Tutor</div><div class="msg-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  $('send-btn').disabled=true;
+  try {
+    const sys=`You are a course-aware academic tutor for a first-year university student named Mumu (Mubanga Kapapa) from Zambia.
+She is currently studying: ${c.name} (${c.type}).
+Her notes in this course: ${c.notes.map(n=>n.title).join(', ')}.
+Her flashcard topics: ${c.flashcards.map(f=>f.q).join('; ')}.
+Stay focused on ${c.name}. Be clear, friendly, concise. Use examples. Keep under 200 words unless more is needed.`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:[{role:'user',content:msg}]})
+    });
+    const data=await res.json();
+    const reply=data.content?.find(b=>b.type==='text')?.text||'Sorry, I could not respond.';
+    $(tid).innerHTML=`<div class="msg-name">AI Tutor</div><div class="msg-bubble">${reply.replace(/\n/g,'<br>')}</div>`;
+  } catch(e) {
+    $(tid).innerHTML=`<div class="msg-name">AI Tutor</div><div class="msg-bubble">⚠️ Connection error. Please try again.</div>`;
+  }
+  $('send-btn').disabled=false;
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function renderColorSwatches(){
+  $('color-row').innerHTML=COLORS.map(col=>`<div class="color-swatch ${col===state.selectedColor?'selected':''}" style="background:${col}" onclick="selectColor('${col}')"></div>`).join('');
+}
+function selectColor(col){state.selectedColor=col;renderColorSwatches();}
+function openModal(){$('modal').classList.add('open');}
+function closeModal(){$('modal').classList.remove('open');$('m-name').value='';}
+function createCourse(){
+  const name=$('m-name').value.trim(); if(!name)return alert('Please enter a course name.');
+  const id='c'+Date.now();
+  state.courses.push({id,name,type:$('m-type').value,color:state.selectedColor,progress:parseInt($('m-prog').value)||0,notes:[],flashcards:[],plan:{},fcStats:{correct:0,wrong:0}});
+  state.activeCourseId=id; closeModal(); renderAll();
+}
+
+init();
+</script>
+</body>
+</html>
