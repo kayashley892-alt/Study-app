@@ -244,6 +244,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .empty{text-align:center;padding:40px 20px;color:var(--dim);}
 .empty-em{font-size:38px;margin-bottom:10px;}
 .empty-txt{font-size:14px;}
+
+/* ── UPLOAD DOC ── */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--r);padding:28px 20px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-icon{font-size:36px;margin-bottom:10px;}
+.upload-lbl{font-size:14px;font-weight:600;margin-bottom:4px;}
+.upload-sub{font-size:12px;color:var(--muted);}
+.upload-preview{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-top:12px;}
+.upload-preview-icon{font-size:26px;flex-shrink:0;}
+.upload-preview-name{font-size:13px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.upload-preview-clear{color:var(--dim);font-size:20px;cursor:pointer;padding:2px 4px;}
+.upload-status{font-size:13px;color:var(--muted);text-align:center;padding:10px 0;display:none;}
+.upload-status.show{display:block;}
+.note-source{display:inline-flex;align-items:center;gap:5px;font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:3px 8px;border-radius:20px;margin-top:6px;color:var(--muted);}
+.fab-row{position:fixed;bottom:74px;right:calc(50% - 230px);display:none;flex-direction:column;gap:8px;align-items:flex-end;z-index:49;}
+.fab-row.show{display:flex;}
+.fab-mini{display:flex;align-items:center;gap:10px;cursor:pointer;}
+.fab-mini-lbl{background:var(--surface);border:1px solid var(--border);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;}
+.fab-mini-btn{width:42px;height:42px;border-radius:50%;border:none;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 14px rgba(0,0,0,.4);}
+.fab-main{width:50px;height:50px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(124,106,247,.45);transition:transform .2s;}
+.fab-main.open{transform:rotate(45deg);}
 </style>
 </head>
 <body>
@@ -420,8 +442,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
     <div class="bni" onclick="goPage('stats',this)"><div class="bni-icon">📊</div><div class="bni-label">Stats</div></div>
   </div>
 
-  <!-- FAB -->
-  <button class="fab" id="fab" onclick="openFab()">+</button>
+  <!-- FAB (expandable on notes page) -->
+  <div class="fab-row" id="fabRow">
+    <div class="fab-mini" onclick="openOv('addNoteOv')">
+      <div class="fab-mini-lbl">✏️ Type a note</div>
+      <div class="fab-mini-btn" style="background:#7c6af7">✏️</div>
+    </div>
+    <div class="fab-mini" onclick="openOv('uploadDocOv')">
+      <div class="fab-mini-lbl">📄 Upload document</div>
+      <div class="fab-mini-btn" style="background:#4fa3e0">📄</div>
+    </div>
+    <div class="fab-mini" onclick="openOv('addCardOv')" id="fabCardBtn" style="display:none">
+      <div class="fab-mini-lbl">🃏 Add flashcard</div>
+      <div class="fab-mini-btn" style="background:#3ec98e">🃏</div>
+    </div>
+    <div class="fab-main" id="fabMain" onclick="toggleFab()">+</div>
+  </div>
 
 </div><!-- /app -->
 
@@ -469,6 +505,35 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
     <div><div class="flbl">Title</div><input class="finput" id="nTitle" placeholder="Note title…"></div>
     <div><div class="flbl">Content</div><textarea class="ftextarea" id="nBody" placeholder="Write your notes here…"></textarea></div>
     <button class="btn-pri" onclick="saveNote()">Save Note</button>
+  </div>
+</div>
+
+<!-- UPLOAD DOCUMENT OVERLAY -->
+<div class="overlay" id="uploadDocOv">
+  <div class="ov-header">
+    <div class="ov-title">Upload Document</div>
+    <button class="ov-close" onclick="closeUpload()">×</button>
+  </div>
+  <div class="ov-body">
+    <div><div class="flbl">Subject (optional)</div><input class="finput" id="upSubj" placeholder="e.g. Contract Law"></div>
+
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="docFile" accept=".pdf,.doc,.docx,.txt,image/*" onchange="handleFile(this)">
+      <div class="upload-icon">📂</div>
+      <div class="upload-lbl">Tap to choose a file</div>
+      <div class="upload-sub">PDF · Word (.docx) · Text · Photos</div>
+    </div>
+
+    <div class="upload-preview" id="uploadPreview" style="display:none;">
+      <div class="upload-preview-icon" id="upFileIcon">📄</div>
+      <div class="upload-preview-name" id="upFileName">—</div>
+      <div class="upload-preview-clear" onclick="clearFile()">×</div>
+    </div>
+
+    <div class="upload-status" id="uploadStatus">⏳ Reading and summarising with AI…</div>
+
+    <button class="btn-pri" id="upSumBtn" onclick="summariseDoc()" style="display:none;">🤖 Summarise & Save as Note</button>
+    <div style="font-size:12px;color:var(--dim);text-align:center;margin-top:4px;" id="upHint">Select a file to continue</div>
   </div>
 </div>
 
@@ -557,8 +622,11 @@ function goPage(name, el) {
   if(el) el.classList.add('active');
   S.curPage = name;
   document.getElementById('scrollArea').scrollTop = 0;
-  const fab = document.getElementById('fab');
-  fab.style.display = (name==='notes'||name==='flash') ? 'flex' : 'none';
+  // FAB: show on notes and flash pages
+  const fabRow = document.getElementById('fabRow');
+  fabRow.classList.remove('open');
+  document.getElementById('fabMain').classList.remove('open');
+  fabRow.style.display = (name==='notes'||name==='flash') ? 'flex' : 'none';
   if(name==='home') renderHome();
   if(name==='notes') renderNotes();
   if(name==='flash') renderFlash();
@@ -567,9 +635,162 @@ function goPage(name, el) {
   if(name==='stats') renderStats();
 }
 
+function toggleFab() {
+  const row = document.getElementById('fabRow');
+  const main = document.getElementById('fabMain');
+  const isOpen = row.classList.contains('open');
+  row.classList.toggle('open', !isOpen);
+  main.classList.toggle('open', !isOpen);
+  // show card btn only on flash page
+  document.getElementById('fabCardBtn').style.display = S.curPage==='flash'?'flex':'none';
+  // hide note/upload btns on flash page
+  document.querySelectorAll('.fab-mini')[0].style.display = S.curPage==='flash'?'none':'flex';
+  document.querySelectorAll('.fab-mini')[1].style.display = S.curPage==='flash'?'none':'flex';
+}
+
 function openFab() {
   if(S.curPage==='notes') openOv('addNoteOv');
   if(S.curPage==='flash') openOv('addCardOv');
+}
+
+// ── DOCUMENT UPLOAD ──────────────────────
+let uploadedFile = null;
+let uploadedBase64 = null;
+let uploadedType = null;
+
+function closeUpload() {
+  closeOv('uploadDocOv');
+  clearFile();
+}
+
+function handleFile(input) {
+  const file = input.files[0];
+  if(!file) return;
+  uploadedFile = file;
+  const icon = file.type.startsWith('image/') ? '🖼️' :
+               file.name.endsWith('.pdf') ? '📕' :
+               (file.name.endsWith('.doc')||file.name.endsWith('.docx')) ? '📘' : '📄';
+  document.getElementById('upFileIcon').textContent = icon;
+  document.getElementById('upFileName').textContent = file.name;
+  document.getElementById('uploadPreview').style.display = 'flex';
+  document.getElementById('upSumBtn').style.display = 'block';
+  document.getElementById('upHint').style.display = 'none';
+
+  // Read as base64
+  const reader = new FileReader();
+  reader.onload = e => {
+    const result = e.target.result;
+    uploadedBase64 = result.split(',')[1];
+    uploadedType = file.type || 'application/octet-stream';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFile() {
+  uploadedFile = null; uploadedBase64 = null; uploadedType = null;
+  document.getElementById('docFile').value = '';
+  document.getElementById('uploadPreview').style.display = 'none';
+  document.getElementById('upSumBtn').style.display = 'none';
+  document.getElementById('upHint').style.display = 'block';
+  document.getElementById('uploadStatus').classList.remove('show');
+}
+
+async function summariseDoc() {
+  if(!uploadedFile || !uploadedBase64) return;
+  const c = ac();
+  const subj = document.getElementById('upSubj').value.trim() || c.name;
+  const status = document.getElementById('uploadStatus');
+  const btn = document.getElementById('upSumBtn');
+
+  status.textContent = '⏳ Reading and summarising with AI…';
+  status.classList.add('show');
+  btn.disabled = true;
+
+  const isImage = uploadedFile.type.startsWith('image/');
+  const isPDF = uploadedFile.name.endsWith('.pdf') || uploadedFile.type === 'application/pdf';
+  const isText = uploadedFile.type === 'text/plain';
+  const fname = uploadedFile.name;
+
+  let messages;
+
+  try {
+    if(isImage) {
+      // Send as image
+      messages = [{
+        role:'user',
+        content:[
+          {type:'image',source:{type:'base64',media_type:uploadedType,data:uploadedBase64}},
+          {type:'text',text:`This is a photo of study notes or a document. Please extract the key information and produce a clear, well-structured academic summary suitable for a university student studying ${c.name}. Include: main concepts, key terms, important points. Format with clear headings and bullet points where helpful. Keep it concise but comprehensive.`}
+        ]
+      }];
+    } else if(isPDF) {
+      messages = [{
+        role:'user',
+        content:[
+          {type:'document',source:{type:'base64',media_type:'application/pdf',data:uploadedBase64}},
+          {type:'text',text:`Summarise this document for a university student studying ${c.name} (subject: ${subj}). Extract: key concepts, important definitions, main arguments, and any notable examples or cases. Format clearly with headings. Be thorough but concise.`}
+        ]
+      }];
+      // Use beta header for PDF support - handled via betas param below
+    } else if(isText) {
+      // Decode base64 text
+      const text = atob(uploadedBase64);
+      messages = [{
+        role:'user',
+        content:`Summarise the following study material for a student studying ${c.name} (subject: ${subj}):\n\n${text.slice(0,8000)}\n\nProvide: key concepts, definitions, main points. Format with clear headings.`
+      }];
+    } else {
+      // Word/other — treat as text attempt
+      status.textContent = '⚠️ Word docs: please save as PDF or take a photo for best results.';
+      btn.disabled = false;
+      return;
+    }
+
+    const isPDFMsg = isPDF;
+    const fetchBody = {
+      model:'claude-sonnet-4-20250514',
+      max_tokens:1500,
+      system:`You are an academic note-taking assistant. Produce clear, well-structured study notes from the provided material. The student is studying ${c.name}. Use plain text with clear structure.`,
+      messages
+    };
+    if(isPDFMsg) fetchBody.betas = ['pdfs-2024-09-25'];
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        ...(isPDFMsg ? {'anthropic-beta':'pdfs-2024-09-25'} : {})
+      },
+      body: JSON.stringify(fetchBody)
+    });
+
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message || 'API error');
+    const summary = data.content?.[0]?.text || 'Could not extract content.';
+
+    // Save as note
+    const d = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    const title = fname.replace(/\.[^.]+$/,'').slice(0,60) || 'Uploaded Document';
+    ac().notes.unshift({
+      id: S.nid++,
+      subject: subj,
+      title,
+      body: summary,
+      date: d,
+      source: fname
+    });
+
+    status.textContent = '✅ Saved as note!';
+    btn.disabled = false;
+    setTimeout(() => {
+      closeUpload();
+      renderNotes();
+    }, 1200);
+
+  } catch(e) {
+    status.textContent = '⚠️ Error: ' + (e.message || 'Could not summarise. Try again.');
+    btn.disabled = false;
+  }
 }
 function openOv(id) { document.getElementById(id).classList.add('open'); }
 function closeOv(id) { document.getElementById(id).classList.remove('open'); }
@@ -716,6 +937,7 @@ function renderNotes(filter='') {
       <div class="note-subj" style="color:${ac().color}">${n.subject}</div>
       <div class="note-title">${n.title}</div>
       <div class="note-preview">${n.body}</div>
+      ${n.source?`<div class="note-source">📄 ${n.source}</div>`:''}
       <div class="note-date">${n.date}</div>
     </div>`).join('');
 }
@@ -1005,6 +1227,7 @@ function renderStats() {
 // ══════════════════════════════════════════
 applyColor();
 renderHome();
+document.getElementById('fabRow').style.display = 'none';
 </script>
 </body>
 </html>
